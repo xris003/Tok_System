@@ -61,8 +61,8 @@ contract Badge is ERC1155 {
 
     struct ListedBadge {
         uint256 badgeId;
+        address payable owner;
         address payable merchant;
-        address payable buyer;
         uint256 price;
         bool currentlyListed;
     }
@@ -74,13 +74,13 @@ contract Badge is ERC1155 {
     mapping(string => bool) public tokenURIExists;
 
     constructor() ERC1155("BadgeItem") {
-        merchant = msg.sender; // Set the merchant in the constructor
+        // merchant = msg.sender; // Set the merchant in the constructor
     }
 
     function createBadge(
         string memory uri,
-        uint price
-    ) public onlyOwner returns (uint256) {
+        uint256 price
+    ) public returns (uint256) {
         require(price > 0, "cannot set negative amount");
 
         require(
@@ -90,6 +90,7 @@ contract Badge is ERC1155 {
 
         _badgeId.increment();
         uint256 badgeId = _badgeId.current();
+        merchant = msg.sender;
 
         _mint(merchant, badgeId, 100, " "); // You might want to provide a more meaningful URI here
 
@@ -107,13 +108,36 @@ contract Badge is ERC1155 {
         return badgeId;
     }
 
-    function badgeBal(uint256 badgeId) public view returns (uint256) {
+    function contractBuy(
+        address _merchant,
+        address buyer,
+        uint256 amount,
+        uint256 badgeId
+    ) public {
+        safeTransferFrom(merchant, buyer, amount, badgeId, "");
+
+        isApprovedForAll(_merchant, buyer);
+        // isApprovedForAll(account, operator);
+    }
+
+    function badgeBal(uint256 badgeId) public view onlyOwner returns (uint256) {
         return balanceOf(merchant, badgeId);
     }
 
-    function buyBadge(uint256 badgeId) public payable {
+    function buyBadge(uint256 badgeId, uint amount) public payable {
         uint price = idToListedBadge[badgeId].price;
         address _merchant = idToListedBadge[badgeId].merchant;
         address buyer = msg.sender;
+
+        require(
+            msg.value == price,
+            "Please submit price in order to complete the purchase"
+        );
+
+        idToListedBadge[badgeId].merchant = payable(msg.sender);
+
+        contractBuy(_merchant, buyer, amount, badgeId);
+
+        payable(_merchant).transfer(price);
     }
 }
