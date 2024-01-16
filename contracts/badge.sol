@@ -76,9 +76,11 @@ contract Badge is ERC1155 {
         uint256 amount,
         uint256 badgeId
     ) public {
+        setApprovalForAll(address(this), true);
+
         safeTransferFrom(_merchant, buyer, amount, badgeId, "");
 
-        setApprovalForAll(address(this), true);
+        setApprovalForAll(address(this), false);
     }
 
     function badgeBal(uint256 badgeId) public view onlyOwner returns (uint256) {
@@ -86,19 +88,33 @@ contract Badge is ERC1155 {
     }
 
     function buyBadge(uint256 badgeId, uint amount) public payable {
-        uint price = idToListedBadge[badgeId].price;
+        // uint price = idToListedBadge[badgeId].price;
         address _merchant = idToListedBadge[badgeId].merchant;
         address buyer = msg.sender;
 
-        require(
-            msg.value == price,
-            "Please submit price in order to complete the purchase"
-        );
+        require(msg.sender != _merchant, "Owner can not buy his own NFT");
 
-        idToListedBadge[badgeId].merchant = payable(msg.sender);
+        // require(
+        //     msg.value == price,
+        //     "Please submit price in order to complete the purchase"
+        // );
 
-        payable(_merchant).transfer(price);
+        // Ensure that the buyer has approved your contract to spend their tokens
+        setApprovalForAll(buyer, true);
 
-        contractBuy(_merchant, buyer, amount, badgeId);
+        // Transfer the tokens from the buyer to the buyer
+        safeTransferFrom(_merchant, buyer, amount, badgeId, "");
+
+        // Set the new owner of the token to the buyer
+        idToListedBadge[badgeId].merchant = payable(buyer);
+
+        // Transfer the payment to the merchant
+        payable(_merchant).transfer(msg.value);
+
+        // contractBuy(_merchant, buyer, amount, badgeId);
+
+        // idToListedBadge[badgeId].merchant = payable(msg.sender);
+
+        // payable(_merchant).transfer(price);
     }
 }
