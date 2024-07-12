@@ -72,4 +72,9 @@ contract ProductListing {
         product.specifications = _specifications;
         product.deliveryDetails = _deliveryDetails;
     }
+
+     // Function to get product details by ID
+    function getProduct(uint _id) public view returns (Product memory) {
+        return products[_id];
+    }
 }
