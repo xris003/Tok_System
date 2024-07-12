@@ -1,0 +1,75 @@
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity ^0.8.25;
+
+// Product listing smart contract
+contract ProductListing {
+    // Struct to store information about a product
+    struct Product {
+        string name;            // Product name
+        string image;           // Product image
+        uint price;             // Product price
+        uint quantity;          // Product quantity
+        address seller;         // Seller address
+        string[] description;     // Product qualities
+        string[] specifications; // Product specifications
+        string[] shippingMethod; // Product shipping method
+        string[] deliveryDetails; // Product delivery options
+    }
+
+    // Event to show product successfully listed
+    event ProductListed(
+        uint indexed id,
+        string indexed name,            
+        string image,
+        uint price,
+        uint quantity,
+        address seller
+    );
+
+    // Mapping to store products by their ID
+    mapping(uint => Product) public products;
+
+    // Counter to generate unique IDs for products
+    uint public productCount;
+
+    // Function to add a new product to the list
+    function addProduct(string memory _name, string memory _image, uint _price, uint _quantity, string[] memory _description, string[] memory _specifications, string[] memory _shippingmethod, string[] memory _deliveryDetails) public {
+       address seller = msg.sender;
+       
+        // Increment the product count and use it as the ID for the new product
+        productCount++;
+        uint id = productCount;
+
+        // Create a new product struct and add it to the mapping
+        Product memory newProduct = Product(_name, _image, _price, _quantity, seller, _description, _specifications, _shippingmethod, _deliveryDetails);
+        products[id] = newProduct;
+
+        //Emit the event for successful transfer. The frontend parses this message and updates the end user
+        emit ProductListed(
+            id,
+            _name,            
+            _image,
+            _price,
+            _quantity,
+            seller
+        );
+    }
+
+    // Function to update an existing product in the list
+    function updateProduct(uint _id, string memory _name, uint _quantity, uint _price, string[] memory _description, string[] memory _specifications, string[] memory _deliveryDetails) public {
+        // Get a reference to the product being updated
+        Product storage product = products[_id];
+
+        // Require only seller can update product 
+        require(msg.sender == product.seller, "Only Seller can update Product" );
+
+        // Update the product's information
+        product.name = _name;
+        product.quantity = _quantity;
+        product.price = _price;
+        product.description = _description;
+        product.specifications = _specifications;
+        product.deliveryDetails = _deliveryDetails;
+    }
+}
