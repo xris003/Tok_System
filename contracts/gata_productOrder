@@ -1,0 +1,40 @@
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity ^0.8.25;
+
+import "./ProductListing.sol"; // Ensure this is the correct path to the ProductListing contract
+
+contract OrderProcessing {
+    ProductListing productListing;
+
+    // Event to show product successfully listed
+    event OrderProduct(
+        uint indexed id,
+        string details,            
+        uint price,
+        uint quantity,
+        uint size,
+        string shippingmethod
+    );
+
+    constructor(address _productListingAddress) {
+        productListing = ProductListing(_productListingAddress);
+    }
+
+    function orderProduct(uint _id, string memory _details, uint _quantity, uint _size, string memory _shippingmethod) public {
+        // Get the product from the ProductListing contract
+        ProductListing.Product memory product = productListing.getProduct(_id);
+
+        // Check to ensure that the product with the given ID exists on the marketplace.
+        require(bytes(product.name).length > 0, "Product ID not found");
+
+        // Check to ensure that the quantity of the product ordered is less than the available product quantity.
+        require(_quantity <= product.quantity, "Quantity requested is above available product quantity");
+
+        // For simplicity, let's assume the size check is within specifications (not implemented here, but can be added if necessary).
+        // Check to ensure that the requested size of the product is still available
+        // require(_size == size, "Requested size is not available"); // Implement size check logic if applicable
+
+        emit OrderProduct(_id, _details, product.price, _quantity, _size, _shippingmethod);
+    }
+}
